@@ -1,50 +1,67 @@
 import json
 import pandas as pd
-from matplotlib import pyplot as plt
 import numpy as np
 import datetime
+from generate_plots import generate_plots
 
 def extract_data():
     
-    with open(file_name, 'r') as f:
-        lines = json.load(f)
-        
-    df_data = pd.DataFrame(lines['animals'][0]['time_series'])
+    file_name = 'P2.json'
     
-    return df_data
+    with open(file_name, 'r') as input_file:
+        raw_data = json.load(input_file)
+        
+    extracted_data = pd.DataFrame(raw_data['animals'][0]['time_series'])
+    
+    global cow_id
+    cow_id = raw_data['animals'][0]['earring']
+
+    return extracted_data
 
 def transform_data(extracted_data):
     
     extracted_data['timestamp'] = pd.to_datetime(extracted_data['timestamp'], format='%Y-%m-%d %H:%M:%S')
-    extracted_data.replace('NA', method = 'pad', inplace = True)
-    extracted_data = extracted_data.set_index('timestamp')
+    extracted_data.set_index('timestamp', inplace = True)
     
-    # Nao necessario para o teste
-    cast_list = list(extracted_data.loc[:, extracted_data.dtypes == object].columns)
-    extracted_data[cast_list] = extracted_data[cast_list].astype(np.int64)
-    
-    aux_data = extracted_data[['rumination', 'activity']]
-    transformed_data = aux_data.groupby(pd.Grouper(freq = 'D')).sum()
-    
+    transformed_data = extracted_data[['rumination', 'activity']].rolling(24).sum().dropna()
+        
     return transformed_data
 
-def exp_smooth(df_data, alpha):
+def alert(row):
     
-    delta = datetime.timedelta(days = 1)
+    if row['activity'] - row['rumination'] > 200:
+        return True
+    else:
+        return False
+
+def exponential_smooth(transformed_data, alpha):
+
+    delta = datetime.timedelta(hours = 1)
     
     flag = True
-    
-    for i, row in df_data.iterrows():
+
+    for i, row in transformed_data.iterrows():    
+        
         if flag:
-            df_data.loc[i, 'exp_smooth'] = row['activity']
+            transformed_data.loc[i, 'exp_smooth'] = row['activity']
             flag = False
         else:
-            df_data.loc[i, 'exp_smooth'] = alpha * row['activity'] + (1 - alpha) * df_data.loc[i - delta, 'exp_smooth']
+            transformed_data.loc[i, 'exp_smooth'] = alpha * row['activity'] + (1 - alpha) * transformed_data.loc[i - delta, 'exp_smooth']    
+        
+        transformed_data.loc[i, 'alert'] = alert(row)
     
-    return df_data
+    transformed_data['residue'] = transformed_data['activity'] - transformed_data['exp_smooth']
+        
+    return transformed_data
 
 def main():
     
     extracted_data = extract_data()
+    
+    print(f'generating report for cow_id: {cow_id}')
+    
     transformed_data = transform_data(extracted_data)
-    exp_smoothed_data = exp_smooth(transformed_data, alpha = 0.05)
+    exp_smoothed_data = exponential_smooth(transformed_data, alpha = 0.05)
+    generate_plots(exp_smoothed_data, cow_id)
+        
+main()
