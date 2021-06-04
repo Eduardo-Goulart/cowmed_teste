@@ -6,4 +6,5 @@ conda env create -f environment.yml
 ```
 
 - Execute o arquivo "cowmed_teste.py".
-- Obs.: como requisitado, o arquivo "P2.json" não está disponível no repositório
+- Os gráficos serão salvos no mesmo diretório do script.
+- Obs.: como requisitado, o arquivo "P2.json" não está disponível no repositório.
