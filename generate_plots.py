@@ -1,7 +1,7 @@
 from matplotlib import pyplot as plt
 import pandas as pd
 
-def alert_filter(smoothed_data):
+def filter_alert(smoothed_data):
     
     df_alert = smoothed_data[smoothed_data['alert'] == True]
 
@@ -11,7 +11,7 @@ def generate_plots(smoothed_data, cow_id):
     
     xticks = list(smoothed_data.index.strftime('%Y-%m-%d').unique())
 
-    alert_series = alert_filter(smoothed_data)
+    alert_series = filter_alert(smoothed_data)
 
     plt.style.use('ggplot')
 
@@ -25,14 +25,16 @@ def generate_plots(smoothed_data, cow_id):
     ax1.tick_params('both', labelsize = 24, labelcolor = 'black', grid_color = 'black', grid_alpha = 0.5)
     ax2.tick_params('both', labelsize = 24, labelcolor = 'black', grid_color = 'black', grid_alpha = 0.5)
 
-    ax1.legend(fontsize = 26, frameon = True, framealpha = 0.6, facecolor = 'white', edgecolor = 'black', loc = 'upper right')
+    ax1.legend(fontsize = 26, frameon = True, framealpha = 0.5, \
+               facecolor = 'white', edgecolor = 'black', loc = 'upper right')
 
     ax1.set_title(f'Cow {cow_id} Analysis', fontsize = 30)
     ax1.set_ylabel('Cumulative 24h Activity', fontsize = 28, labelpad = 16, color = 'black')
-    ax2.set_ylabel('Residue', fontsize = 28, labelpad = 10, color = 'black')
+    ax2.set_ylabel('Residue', fontsize = 28, color = 'black')
     ax2.set_xlabel('Dates', fontsize = 28, labelpad = 16, color = 'black')
 
-    plt.xticks(xticks, rotation = 70)
+    plt.xticks(xticks, rotation = 75)
+    
     plt.tight_layout()
     plt.savefig(f'cow_{cow_id}_report.png')
     plt.plot()
